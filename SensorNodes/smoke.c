@@ -33,6 +33,8 @@ Payload theData;
 //end RFM69 ------------------------------------------
 
 const int gasPin = A0;
+const int rgb3 = 6;
+const int alm = 5;
 long lastPeriod = -1;
 
 void setup()
@@ -47,7 +49,9 @@ void setup()
   char buff[50];
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY==RF69_433MHZ ? 433 : FREQUENCY==RF69_868MHZ ? 868 : 915);
   Serial.println(buff);
-  theData.nodeID = NODEID;  //this node id should be the same for all devices in this node  
+  theData.nodeID = NODEID;  //this node id should be the same for all devices in this node 
+  pinMode(rgb3, OUTPUT);
+  pinMode(alm, OUTPUT); 
 }
 
 
@@ -73,7 +77,31 @@ void loop()
     } else {
       Serial.print(" nothing...");
     }
+    while(gasMonitor > 100){
+      theData.var3_float = 1;                                                     //Alarm signal
+      radio.sendWithRetry(GATEWAYID, (const void*)(&theData), sizeof(theData));
+      Serial.println("ALARM!! sending alarm");
+      playTone(100, 2600);
+      analogWrite(rgb3, 255);
+      delay(100);
+      digitalWrite(rgb3, LOW);
+      gasMonitor = analogRead(gasPin);
+    }
+    analogWrite(alm, 0);
     lastPeriod=currPeriod;
   }
   delay(1000);
+}
+
+void playTone(long duration, int freq) {
+    duration *= 1000;
+    int period = (1.0 / freq) * 1000000;
+    long elapsed_time = 0;
+    while (elapsed_time < duration) {
+        digitalWrite(alm,HIGH);
+        delayMicroseconds(period / 2);
+        digitalWrite(alm, LOW);
+        delayMicroseconds(period / 2);
+        elapsed_time += (period);
+    }
 }
