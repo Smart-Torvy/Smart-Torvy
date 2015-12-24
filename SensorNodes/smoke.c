@@ -14,11 +14,9 @@
 #define LED           9  // Moteinos have LEDs on D9
 #define SERIAL_BAUD   115200  //must be 9600 for GPS, use whatever if no GPS
 
-int TRANSMITPERIOD = 300; //transmit a packet to gateway so often (in ms)
-char buff[20];
-byte sendSize=0;
-boolean requestACK = false;
-RFM69 radio;
+#define GASPIN A0
+#define REDPIN  6
+#define PIEZOPIN  5
 
 //struct for wireless data transmission
 typedef struct {    
@@ -30,15 +28,13 @@ typedef struct {
 } Payload;
 Payload theData;
 
+int TRANSMITPERIOD = 300; //transmit a packet to gateway so often (in ms)
+RFM69 radio;
+long lastPeriod = -1;
 //end RFM69 ------------------------------------------
 
-const int gasPin = A0;
-const int rgb3 = 6;
-const int alm = 5;
-long lastPeriod = -1;
 
-void setup()
-{
+void setup() {
   Serial.begin(SERIAL_BAUD);          //  setup serial
   Serial.println("starting");
   radio.initialize(FREQUENCY,NODEID,NETWORKID);
@@ -50,14 +46,13 @@ void setup()
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY==RF69_433MHZ ? 433 : FREQUENCY==RF69_868MHZ ? 868 : 915);
   Serial.println(buff);
   theData.nodeID = NODEID;  //this node id should be the same for all devices in this node 
-  pinMode(rgb3, OUTPUT);
-  pinMode(alm, OUTPUT); 
+  pinMode(REDPIN, OUTPUT);
+  pinMode(PIEZOPIN, OUTPUT); 
 }
 
 
-void loop()
-{  
-  int gasMonitor = analogRead(gasPin);
+void loop() {  
+  int gasMonitor = analogRead(GASPIN);
   int currPeriod = millis()/TRANSMITPERIOD;
   if (currPeriod != lastPeriod) {
     Serial.print("\ngasMonitor=");
@@ -77,30 +72,30 @@ void loop()
     } else {
       Serial.print(" nothing...");
     }
-    while(gasMonitor > 100){
+    lastPeriod=currPeriod;
+  }
+  while(gasMonitor > 100){
       theData.var3_float = 1;                                                     //Alarm signal
       radio.sendWithRetry(GATEWAYID, (const void*)(&theData), sizeof(theData));
       Serial.println("ALARM!! sending alarm");
-      playTone(100, 2600);
-      analogWrite(rgb3, 255);
+      playTone(100, 2600, PIEZOPIN);
+      analogWrite(REDPIN, 255);
       delay(100);
-      digitalWrite(rgb3, LOW);
-      gasMonitor = analogRead(gasPin);
+      digitalWrite(REDPIN, LOW);
+      gasMonitor = analogRead(GASPIN);
     }
-    analogWrite(alm, 0);
-    lastPeriod=currPeriod;
-  }
+  analogWrite(PIEZOPIN, 0);
   delay(1000);
 }
 
-void playTone(long duration, int freq) {
+void playTone(long duration, int freq, int piezoPin) {
     duration *= 1000;
     int period = (1.0 / freq) * 1000000;
     long elapsed_time = 0;
     while (elapsed_time < duration) {
-        digitalWrite(alm,HIGH);
+        digitalWrite(piezoPin,HIGH);
         delayMicroseconds(period / 2);
-        digitalWrite(alm, LOW);
+        digitalWrite(piezoPin, LOW);
         delayMicroseconds(period / 2);
         elapsed_time += (period);
     }
