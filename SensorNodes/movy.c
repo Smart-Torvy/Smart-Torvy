@@ -1,5 +1,5 @@
 // PIR motion sensor connected to D3 (INT1)
-// When RISE happens on D3, the sketch transmits a "MOTION" msg to receiver Moteino and goes back to sleep
+// When RISE happens on D3, the sketch transmits a 1 msg to TorvyHAB and goes back to sleep
 // In sleep mode, Moteino + PIR motion sensor use about ~78uA
 
 #include <RFM69.h>    //get it here: https://www.github.com/lowpowerlab/rfm69
@@ -24,6 +24,7 @@
 #define BATT_MONITOR  A7  // Sense VBAT_COND signal (when powered externally should read ~3.25v/3.3v (1000-1023), when external power is cutoff it should start reading around 2.85v/3.3v * 1023 ~= 880 (ratio given by 10k+4.7K divider from VBAT_COND = 1.47 multiplier)
 #define BATT_CYCLES   30  //read and report battery voltage every this many wakeup cycles (ex 30cycles * 8sec sleep = 240sec/4min)
 #define MOTIONPIN      3 //hardware interrupt 1 (D3) WDT ARDUINO
+#define MOTION_IRQ     1 // go to https://www.arduino.cc/en/Reference/AttachInterrupt for more info
 #define SERIAL_BAUD    115200
 
 #define SERIAL_EN             //comment this out when deploying to an installed SM to save a few KB of sketch size
@@ -57,7 +58,7 @@ void setup() {
 #endif
   radio.encrypt(ENCRYPTKEY);
   pinMode(MOTIONPIN, INPUT);
-  attachInterrupt( 1 , motionIRQ, RISING);
+  attachInterrupt(MOTION_IRQ , motionIRQ, RISING);
   char buff[50];
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY==RF69_433MHZ ? 433 : FREQUENCY==RF69_868MHZ ? 868 : 915);
   DEBUGln(buff);
