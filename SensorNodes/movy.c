@@ -22,10 +22,11 @@
 #define ACK_TIME      30 // max # of ms to wait for an ack
 #define ONBOARDLED     9  // Moteinos have LEDs on D9
 #define BATT_MONITOR  A7  // Sense VBAT_COND signal (when powered externally should read ~3.25v/3.3v (1000-1023), when external power is cutoff it should start reading around 2.85v/3.3v * 1023 ~= 880 (ratio given by 10k+4.7K divider from VBAT_COND = 1.47 multiplier)
-#define BATT_CYCLES   30  //read and report battery voltage every this many wakeup cycles (ex 30cycles * 8sec sleep = 240sec/4min)
 #define MOTIONPIN      3 //hardware interrupt 1 (D3) WDT ARDUINO
+#define BATT_CYCLES   30  //read and report battery voltage every this many wakeup cycles (ex 30cycles * 8sec sleep = 240sec/4min)
 #define MOTION_IRQ     1 // go to https://www.arduino.cc/en/Reference/AttachInterrupt for more info
 #define SERIAL_BAUD    115200
+#define MOTIONDEVICEID 1
 
 #define SERIAL_EN             //comment this out when deploying to an installed SM to save a few KB of sketch size
 #ifdef SERIAL_EN
@@ -62,11 +63,13 @@ void setup() {
   char buff[50];
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY==RF69_433MHZ ? 433 : FREQUENCY==RF69_868MHZ ? 868 : 915);
   DEBUGln(buff);
+  theData.nodeID = NODEID;
+  theData.deviceID = MOTIONDEVICEID;
   pinMode(ONBOARDLED, OUTPUT);
   pinMode(BATT_MONITOR, INPUT);
 }
 
-void motionIRQ()
+void motionIRQ(void)
 {
   motionDetected=true;
 }

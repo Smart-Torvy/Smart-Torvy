@@ -13,7 +13,7 @@
 #define ACK_TIME      30 // max # of ms to wait for an ack
 #define LED           9  // Moteinos have LEDs on D9
 #define SERIAL_BAUD   115200  //must be 9600 for GPS, use whatever if no GPS
-
+#define GASDEVICEID 2
 #define GASPIN A0
 #define REDPIN  6
 #define PIEZOPIN  5
@@ -46,6 +46,7 @@ void setup() {
   sprintf(buff, "\nTransmitting at %d Mhz...", FREQUENCY==RF69_433MHZ ? 433 : FREQUENCY==RF69_868MHZ ? 868 : 915);
   Serial.println(buff);
   theData.nodeID = NODEID;  //this node id should be the same for all devices in this node 
+  theData.deviceID = GASDEVICEID;
   pinMode(REDPIN, OUTPUT);
   pinMode(PIEZOPIN, OUTPUT); 
 }
@@ -59,7 +60,6 @@ void loop() {
     Serial.println(gasMonitor);
 
     //send data
-    theData.deviceID = 6;
     theData.uptime = millis();
     theData.var2_float = gasMonitor;
     theData.var3_float = 0;
