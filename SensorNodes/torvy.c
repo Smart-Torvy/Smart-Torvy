@@ -51,6 +51,7 @@ long lastPeriod = -1;
 volatile boolean buttonPressed = false;
 float batteryVolts = 5;
 byte batteryReportCycles=0;
+byte ma = 0;
 
 //end RFM69 ------------------------------------------
 
@@ -82,11 +83,12 @@ void pressIRQ(void){
 
 void loop() {  
   checkBattery();
+  theData.deviceID = TORVY_1_DEVICEID;
   if(buttonPressed) {
-    theData.var2_float = 1;
+    ma = 1;
   }
   if(digitalRead(BUTTONPIN) == HIGH){
-    theData.var2_float = 0;
+    ma = 0;
   }
   //check for any received packets
   if (radio.receiveDone()) {
@@ -111,22 +113,24 @@ void loop() {
       Serial.println(" - ACK sent");
     }
   }     //End receiving part
-  if( theData.var2_float == 1){
+  if( (theData.var2_float == 1 && theData.deviceID == TORVY_1_DEVICEID) || ma == 1 ){
       digitalWrite(RELAYSET, HIGH);
       delay(1);
       digitalWrite(RELAYSET, LOW);
       digitalWrite(GREENPIN, HIGH);   //TODO adding fadeing effect (breathing)
-  } else if (theData.var2_float == 0) {
+  } else if ( (theData.var2_float == 0 && theData.deviceID == TORVY_1_DEVICEID) || ma == 0) {
       digitalWrite(RELAYRESET, HIGH);
       delay(1);
       digitalWrite(RELAYRESET, LOW);
       digitalWrite(GREENPIN, LOW);
       // TODO mandare temperatura e voltaggio batteria su theData.deviceID diversi;
+      theData.deviceID = TORVY_1_DEVICEID;
+      theData.var3_float = batteryVolts;
       radio.send(GATEWAYID, (const void*)(&theData), sizeof(theData));
       radio.sleep();
       batteryReportCycles=0;
       buttonPressed = false;
-      LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+      LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);   //TODO sistemare sleep del trasmettitore in modo tale che risvegli il trasmattitore alla ricerca di payload ogni tot secondi
   }
   batteryReportCycles++;
   int currPeriod = millis()/TRANSMITPERIOD;
@@ -153,7 +157,7 @@ void loop() {
     Serial.print("*C\n");
 
     //send data
-    theData.deviceID = 6;
+    theData.deviceID = TORVY_2_DEVICEID;
     theData.uptime = millis();
     theData.var2_float = t;
     theData.var3_float = h;
